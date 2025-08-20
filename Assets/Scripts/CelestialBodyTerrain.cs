@@ -6,8 +6,6 @@ public class CelestialBodyTerrain : MonoBehaviour
 {
     private Sphere _sphere;
 
-    //private Sphere _sphereBodyTerrain;
-
     private MeshFilter[] _originalMeshFilters;
 
     private MeshFilter[] _meshFilters;
@@ -85,9 +83,25 @@ public class CelestialBodyTerrain : MonoBehaviour
     {
         if (_autoUpdate == true)
         {
-            if (_sphere == null) return;
+            if (_sphere == null)
+            {
+                if (_originalMeshFilters != null && _originalMeshFilters[0] == null)
+                {
+                    _originalMeshFilters = null;
+                    DestroyMesh();
+                }
+                Debug.Log("_sphere == null");
+                return;
+            }
 
             _originalMeshFilters = _sphere.GetMeshFilters();
+
+            if (_originalMeshFilters == null ||  _originalMeshFilters.Length == 0) 
+            {
+                DestroyMesh();
+                Debug.Log("_originalMeshFilters == null");
+                return;
+            }
 
             if (_meshFilters == null || _meshFilters.Length != _originalMeshFilters.Length)
                 _meshFilters = new MeshFilter[_originalMeshFilters.Length];
@@ -105,18 +119,57 @@ public class CelestialBodyTerrain : MonoBehaviour
                     _meshFilters[i].sharedMesh = new Mesh();
                 }
 
-                // Робимо копію меша, щоб зберегти початкову форму
                 _meshFilters[i].sharedMesh = Instantiate(_originalMeshFilters[i].sharedMesh);
 
-                // Вимикаємо рендеринг оригіналів
-                var renderer = _originalMeshFilters[i].GetComponent<MeshRenderer>();
-                if (renderer != null)
-                    renderer.enabled = false;
+                EditRendering(_originalMeshFilters, false);
             }
+            Debug.Log("_meshCopy is created");
 
-            
 
             ApplyModifications();
         }
+    }
+
+    internal void DestroyMesh()
+    {
+        if (_meshFilters == null) return;
+
+        EditRendering(_originalMeshFilters, true);
+
+        foreach (var filter in _meshFilters)
+        {
+            if (filter != null)
+            {
+                DestroyImmediate(filter.gameObject);
+            }
+        }
+
+        _meshFilters = null;
+
+        Debug.Log("Mesh is destroyed");
+    }
+
+    internal void EditRendering(MeshFilter[] meshFilters, bool value = true)
+    {
+        if (meshFilters == null) return;
+
+        foreach (var filter in meshFilters)
+        {
+            if (filter != null)
+            {
+                var renderer = filter.GetComponent<MeshRenderer>();
+                if (renderer != null)
+                    renderer.enabled = value;
+            }
+        }       
+    }
+
+    internal bool CompareMeshFilters()
+    {
+        if (Sphere == null && _originalMeshFilters != null) return false;
+        if (Sphere.GetMeshFilters() == null) return false;
+        if (Sphere != null && _originalMeshFilters == null) return false;
+        if (_originalMeshFilters == null) return true;
+        return _originalMeshFilters.Length == Sphere.GetMeshFilters().Length;
     }
 }

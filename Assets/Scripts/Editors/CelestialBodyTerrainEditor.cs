@@ -47,6 +47,8 @@ public class CelestialBodyTerrainEditor : Editor
             EditorUtility.SetDirty(_terrain);
         }
 
+        //EditorGUI.BeginChangeCheck();
+
         _terrain.AutoUpdate = EditorGUILayout.Toggle("Auto Update", _terrain.AutoUpdate);
         if (_terrain.AutoUpdate == false)
         {
@@ -54,21 +56,37 @@ public class CelestialBodyTerrainEditor : Editor
 
             if (GUILayout.Button("Generate"))
             {
+                //EditorGUI.EndChangeCheck();
                 _terrain.AutoUpdate = true;
-                //_terrain.RegenerateSphere();
                 _terrain.UpdateSphere();
                 _terrain.AutoUpdate = false;
             }  
         }
         else if (_terrain.AutoUpdate == true)
         {
+            //if (EditorGUI.EndChangeCheck())
+            //{
+            //    if (_delayedGeneration == true)
+            //    {
+            //        _delayedGeneration = false;
+            //    }
+            //    Debug.Log("+++++++");
+            //    _terrain.UpdateSphere();
+            //}
+
             if (_delayedGeneration == true)
             {
-                //_terrain.RegenerateSphere();
                 _delayedGeneration = false;
             }
+            Debug.Log("+++++++");
             _terrain.UpdateSphere();
-        }    
+        }
+
+        //if (_terrain.CompareMeshFilters() == false)
+        //{
+        //    Debug.Log("----------");
+        //    _terrain.UpdateSphere();
+        //}
 
         EditorGUILayout.Space();
         if (GUILayout.Button("Add Modification"))
@@ -139,28 +157,23 @@ public class CelestialBodyTerrainEditor : Editor
             editor.OnInspectorGUI();
             if (EditorGUI.EndChangeCheck())
             {
-                serialized.ApplyModifiedProperties(); // применяем изменения
-                onSettingsUpdated(); // вызываем обновление только при реальных изменениях
+                serialized.ApplyModifiedProperties(); 
+                onSettingsUpdated();
             }
             else
             {
-                serialized.ApplyModifiedProperties(); // всё равно применяем, чтобы избежать задержек
+                serialized.ApplyModifiedProperties(); 
             }
         }
     }
 
-    //using var check = new EditorGUI.ChangeCheckScope();
-    //if (foldout)
-    //{
-    //    if (editor == null) CreateCachedEditor(settings, null, ref editor);
-
-    //    editor.OnInspectorGUI();
-
-    //    if (check.changed)
-    //    {
-    //        onSettingsUpdated();
-    //    }
-    //}
+    private void OnDisable()
+    {
+        if (_terrain == null)
+        {
+            _terrain.DestroyMesh();
+        }
+    }
 }
 
 
