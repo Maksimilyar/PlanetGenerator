@@ -1,36 +1,20 @@
 using SphereGenerator;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CelestialBodyTerrain : MonoBehaviour
 {
-    [Range(2, 256)]
-    private int _resolution = 2;
-
     private Sphere _sphere;
+
+    //private Sphere _sphereBodyTerrain;
+
+    private MeshFilter[] _originalMeshFilters;
 
     private MeshFilter[] _meshFilters;
 
     private Modification[] _modifications;
 
     private bool _autoUpdate = true;
-    
-
-    public int Resolution
-    {
-        get => _resolution;
-        internal set
-        {
-            if (_resolution != value)
-            {
-                _resolution = value;
-                if (_sphere != null)
-                {
-                    _sphere.GenerateSphere(_resolution, _autoUpdate);
-                    UpdateSphere();
-                }
-            }
-        }
-    }
 
     public Sphere Sphere
     {
@@ -71,9 +55,29 @@ public class CelestialBodyTerrain : MonoBehaviour
     {
         if (_modifications == null) return;
 
+        for (int i = 0; i < _originalMeshFilters.Length; i++)
+        {
+            Mesh sourceMesh = _originalMeshFilters[i].sharedMesh;
+            Mesh targetMesh = _meshFilters[i].sharedMesh;
+
+            if (targetMesh == null)
+            {
+                targetMesh = Instantiate(sourceMesh);
+                _meshFilters[i].sharedMesh = targetMesh;
+            }
+            else
+            {
+                targetMesh.Clear();
+                targetMesh.vertices = sourceMesh.vertices;
+                targetMesh.normals = sourceMesh.normals;
+                targetMesh.uv = sourceMesh.uv;
+                targetMesh.triangles = sourceMesh.triangles;
+            }
+        }
+
         for (int i = 0; i < _modifications.Length; i++)
         {
-           _modifications[i].ApplyModification(_meshFilters);;
+           _modifications[i].ApplyModification(_meshFilters);
         }
     }
 
@@ -82,18 +86,37 @@ public class CelestialBodyTerrain : MonoBehaviour
         if (_autoUpdate == true)
         {
             if (_sphere == null) return;
-            //_sphere.GenerateSphere();
 
-            _meshFilters = _sphere.GetMeshFilters();
+            _originalMeshFilters = _sphere.GetMeshFilters();
+
+            if (_meshFilters == null || _meshFilters.Length != _originalMeshFilters.Length)
+                _meshFilters = new MeshFilter[_originalMeshFilters.Length];
+
+            for (int i = 0; i < _meshFilters.Length; i++)
+            {
+                if (_meshFilters[i] == null)
+                {
+                    GameObject meshObject = new("_meshCopy");
+                    meshObject.transform.parent = transform;
+                    meshObject.transform.localPosition = Vector3.zero;
+
+                    meshObject.AddComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Standard"));
+                    _meshFilters[i] = meshObject.AddComponent<MeshFilter>();
+                    _meshFilters[i].sharedMesh = new Mesh();
+                }
+
+                // Робимо копію меша, щоб зберегти початкову форму
+                _meshFilters[i].sharedMesh = Instantiate(_originalMeshFilters[i].sharedMesh);
+
+                // Вимикаємо рендеринг оригіналів
+                var renderer = _originalMeshFilters[i].GetComponent<MeshRenderer>();
+                if (renderer != null)
+                    renderer.enabled = false;
+            }
+
+            
+
             ApplyModifications();
-        }
-    }
-
-    internal void RegenerateSphere()
-    {
-        if (_sphere != null)
-        {
-            _sphere.GenerateSphere(_resolution);
         }
     }
 }

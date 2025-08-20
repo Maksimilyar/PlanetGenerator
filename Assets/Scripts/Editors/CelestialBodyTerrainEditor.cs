@@ -68,17 +68,7 @@ public class CelestialBodyTerrainEditor : Editor
                 _delayedGeneration = false;
             }
             _terrain.UpdateSphere();
-        }
-
-        //int newResolution = EditorGUILayout.IntSlider("Resolution", _terrain.Resolution, 2, 255);
-        //if (newResolution != _terrain.Resolution)
-        //{
-        //    Undo.RecordObject(_terrain, "Change Resolution");
-        //    _terrain.Resolution = newResolution;
-        //    _terrain.RegenerateSphere();
-        //}
-
-        
+        }    
 
         EditorGUILayout.Space();
         if (GUILayout.Button("Add Modification"))
@@ -138,19 +128,39 @@ public class CelestialBodyTerrainEditor : Editor
     {
         foldout = EditorGUILayout.InspectorTitlebar(foldout, settings);
 
-        using var check = new EditorGUI.ChangeCheckScope();
         if (foldout)
         {
             if (editor == null) CreateCachedEditor(settings, null, ref editor);
 
-            editor.OnInspectorGUI();
+            var serialized = editor.serializedObject;
+            serialized.Update();
 
-            if (check.changed)
+            EditorGUI.BeginChangeCheck();
+            editor.OnInspectorGUI();
+            if (EditorGUI.EndChangeCheck())
             {
-                onSettingsUpdated();
+                serialized.ApplyModifiedProperties(); // применяем изменения
+                onSettingsUpdated(); // вызываем обновление только при реальных изменениях
+            }
+            else
+            {
+                serialized.ApplyModifiedProperties(); // всё равно применяем, чтобы избежать задержек
             }
         }
     }
+
+    //using var check = new EditorGUI.ChangeCheckScope();
+    //if (foldout)
+    //{
+    //    if (editor == null) CreateCachedEditor(settings, null, ref editor);
+
+    //    editor.OnInspectorGUI();
+
+    //    if (check.changed)
+    //    {
+    //        onSettingsUpdated();
+    //    }
+    //}
 }
 
 

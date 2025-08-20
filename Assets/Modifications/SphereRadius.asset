@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee30a514f27c04244abd223673f6dd9e, type: 3}
   m_Name: SphereRadius
   m_EditorClassIdentifier: 
-  _radius: 100
+  _radius: 1.18
